@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Distribution Scanner – Sairam Vidyalaya</title>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f0f;min-height:100vh;display:flex;justify-content:center}
+    .wrap{width:100%;max-width:500px;background:#1a1a1a;min-height:100vh;padding:1rem;color:#fff;padding-bottom:2rem}
+
+    /* Header */
+    .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+    .hdr-left{display:flex;align-items:center;gap:8px}
+    .hdr h1{font-size:16px;font-weight:700}
+    .year-badge{font-size:11px;background:#1a3a1a;color:#22c55e;border:1px solid #1a4a1a;padding:3px 10px;border-radius:20px;font-weight:600}
+    .sub{font-size:11px;color:#22c55e;font-weight:600;margin-bottom:.75rem}
+
+    /* Top summary */
+    .sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+    .sc{background:#222;border-radius:9px;padding:8px 6px;border:1px solid #2a2a2a;text-align:center}
+    .sc .v{font-size:20px;font-weight:700}
+    .sc .l{font-size:9px;color:#555;margin-top:1px}
+    .sc.blue .v{color:#60a5fa}
+    .sc.green .v{color:#22c55e}
+    .sc.amber .v{color:#f59e0b}
+
+    /* Category cards */
+    .cat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .cat-card{background:#222;border-radius:10px;padding:10px 8px;border:2px solid #2a2a2a;text-align:center;cursor:pointer;transition:all 0.15s}
+    .cat-card.active.books{border-color:#60a5fa;background:#101830}
+    .cat-card.active.uniform{border-color:#22c55e;background:#101a10}
+    .cat-card .ci{font-size:22px;margin-bottom:4px}
+    .cat-card .cv{font-size:14px;font-weight:700;color:#aaa}
+    .cat-card.active.books .cv{color:#60a5fa}
+    .cat-card.active.uniform .cv{color:#22c55e}
+    .cat-card .cl{font-size:10px;color:#555;margin-top:2px}
+
+    /* Progress */
+    .prog-section{margin-bottom:12px}
+    .prog-item{margin-bottom:7px}
+    .prog-label{display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:3px}
+    .prog-bar{height:6px;background:#1e1e1e;border-radius:10px;overflow:hidden}
+    .prog-fill{height:100%;border-radius:10px;transition:width 0.7s ease}
+    .prog-fill.books{background:linear-gradient(90deg,#3b82f6,#93c5fd)}
+    .prog-fill.uniform{background:linear-gradient(90deg,#16a34a,#4ade80)}
+
+    /* Item selector */
+    .item-sel-label{font-size:10px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+    .item-sel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .ibtn{padding:12px 6px;border-radius:10px;border:2px solid #2a2a2a;background:#222;color:#555;font-size:12px;cursor:pointer;font-weight:600;text-align:center;transition:all 0.15s}
+    .ibtn .ie{font-size:22px;display:block;margin-bottom:4px}
+    .ibtn.on.books{background:#101830;border-color:#60a5fa;color:#60a5fa}
+    .ibtn.on.uniform{background:#101a10;border-color:#22c55e;color:#22c55e}
+
+    /* Tabs */
+    .tabs{display:flex;background:#222;border-radius:10px;padding:4px;margin-bottom:10px}
+    .tab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:#555;font-size:13px;font-weight:500;cursor:pointer}
+    .tab.on{background:#2a2a2a;color:#fff}
+
+    /* Camera */
+    #reader{width:100%;border-radius:12px;overflow:hidden;background:#000}
+    #reader video{width:100%!important}
+    #reader__scan_region img{display:none!important}
+    #reader__dashboard{background:#1a1a1a!important;padding:6px 0 0!important}
+    #reader__status_span{color:#555!important;font-size:11px!important}
+    #reader__dashboard_section_swaplink{color:#555!important;font-size:12px!important}
+    #reader__camera_selection{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #2a2a2a;background:#222;color:#ccc;font-size:13px;margin-bottom:6px}
+    #reader__camera_permission_button,#reader__dashboard_section_csr button{width:100%;padding:12px;border-radius:10px;border:none;background:#22c55e;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+    #reader__filescan_input,#reader__header_message{display:none!important}
+
+    .cam-btns{display:flex;gap:8px;margin-top:8px}
+    .btn{flex:1;padding:11px;border-radius:10px;border:1px solid #2a2a2a;background:#222;color:#aaa;font-size:13px;cursor:pointer;font-weight:500}
+    .btn.g{background:#15803d;border-color:#166534;color:#fff}
+    .btn.r{background:#7f1d1d;border-color:#991b1b;color:#fca5a5}
+
+    /* Upload */
+    .upload-panel{display:none}
+    .dropzone{border:2px dashed #2a2a2a;border-radius:12px;padding:2rem 1rem;text-align:center;cursor:pointer;background:#1e1e1e}
+    .dropzone:hover{border-color:#22c55e}
+    .dropzone p{font-size:14px;color:#555;margin-top:8px}
+    #fileInput{display:none}
+    .prev-box{display:none;margin-top:10px;position:relative}
+    .prev-box img{width:100%;border-radius:10px;border:1px solid #2a2a2a}
+    .clr-btn{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer}
+    .sfbtn{display:none;width:100%;margin-top:8px}
+    #fileReader{display:none}
+
+    /* Manual */
+    .manual-row{display:flex;gap:8px;margin-top:10px}
+    .manual-row input{flex:1;padding:11px 12px;border-radius:10px;border:1px solid #2a2a2a;background:#222;color:#fff;font-size:14px;text-transform:uppercase}
+    .manual-row input::placeholder{color:#444;text-transform:none}
+    .manual-row button{padding:11px 20px;border-radius:10px;border:none;background:#15803d;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+
+    /* Status bar */
+    .status-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 14px;background:#222;border-radius:10px;min-height:42px}
+    .dot{width:8px;height:8px;border-radius:50%;background:#333;flex-shrink:0}
+    .dot.scanning{background:#22c55e;animation:pulse 1s infinite}
+    .dot.ok{background:#22c55e}
+    .dot.warn{background:#f59e0b}
+    .dot.err{background:#ef4444}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+    .stxt{font-size:13px;color:#888;flex:1}
+
+    /* Student result card */
+    .student-card{display:none;margin-top:12px;border-radius:14px;padding:1rem 1.25rem;border:1px solid #2a2a2a;background:#222}
+    .student-card.new{background:#0f1f0f;border-color:#1a4a1a}
+    .student-card.dup{background:#1f1800;border-color:#4a3a00}
+    .student-card.notfound{background:#1f0f0f;border-color:#4a1a1a}
+
+    .sc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+    .sc-name{font-size:20px;font-weight:700;color:#fff}
+    .sc-adm{font-size:12px;color:#555;margin-top:2px}
+    .sc-meta{font-size:12px;color:#666;margin-top:2px}
+    .gender-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;margin-top:4px;display:inline-block}
+    .gender-badge.f{background:#2a1a2a;color:#f9a8d4;border:1px solid #4a1a4a}
+    .gender-badge.m{background:#1a1a2a;color:#93c5fd;border:1px solid #1a1a4a}
+
+    /* Status items */
+    .dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .dist-item{border-radius:10px;padding:10px 8px;text-align:center;border:1px solid #2a2a2a;background:#1e1e1e}
+    .dist-item.done{background:#0f2a0f;border-color:#166534;animation:glowGreen 0.6s ease}
+    .dist-item.already{background:#1f1800;border-color:#854d0e}
+    .dist-item.issued{background:#0f1f0f;border-color:#1a3a1a}
+    .dist-item.pending{background:#1a1a1a;border-color:#222}
+    @keyframes glowGreen{0%{box-shadow:0 0 16px rgba(34,197,94,.7)}100%{box-shadow:none}}
+    .di-icon{font-size:20px;margin-bottom:4px}
+    .di-label{font-size:10px;color:#666;margin-bottom:3px}
+    .di-status{font-size:11px;font-weight:700}
+    .di-status.done{color:#22c55e}
+    .di-status.already{color:#f59e0b}
+    .di-status.issued{color:#4ade80}
+    .di-status.pending{color:#333}
+    .di-date{font-size:9px;color:#444;margin-top:2px}
+
+    .sc-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .sc-actions button{padding:9px 18px;border-radius:8px;border:none;background:#15803d;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+    .countdown-txt{font-size:12px;color:#444}
+
+    /* Duplicate overlay */
+    .dup-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.9);align-items:center;justify-content:center;animation:fadeIn .2s}
+    .dup-overlay.show{display:flex}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .dup-card{background:#1a1000;border:2px solid #f59e0b;border-radius:18px;padding:1.75rem 1.25rem;margin:1rem;max-width:340px;width:100%;text-align:center;animation:popIn .25s ease}
+    @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+    .dup-emoji{font-size:56px;margin-bottom:10px}
+    .dup-title{font-size:20px;font-weight:800;color:#f59e0b;margin-bottom:8px}
+    .dup-name{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+    .dup-sub{font-size:12px;color:#777;margin-bottom:6px}
+    .dup-item-chip{display:inline-block;font-size:13px;padding:5px 16px;border-radius:20px;background:#2a1800;border:1px solid #f59e0b;color:#f59e0b;margin-bottom:12px;font-weight:600}
+    .dup-msg{font-size:13px;color:#f59e0b;background:#110a00;border-radius:10px;padding:12px;margin-bottom:16px;line-height:1.7}
+    .dup-msg strong{color:#fbbf24}
+    .dup-close{width:100%;padding:14px;border-radius:12px;border:none;background:#f59e0b;color:#1a0800;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.02em}
+
+    /* Flash overlay */
+    .flash-ok{display:none;position:fixed;inset:0;z-index:998;background:rgba(34,197,94,.1);pointer-events:none}
+    @keyframes flashOut{0%{opacity:1}100%{opacity:0;display:none}}
+
+    /* History */
+    .hist{display:none;margin-top:12px}
+    .h-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .h-hdr span{font-size:11px;color:#3a3a3a;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    .h-hdr button{font-size:11px;color:#3a3a3a;background:none;border:none;cursor:pointer;padding:2px 8px}
+    .hitem{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#1e1e1e;border-radius:8px;margin-bottom:5px;border:1px solid #222}
+    .hdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .hdot.ok{background:#22c55e}
+    .hdot.dup{background:#f59e0b}
+    .hdot.err{background:#ef4444}
+    .hadm{font-size:13px;color:#bbb;flex:1;font-weight:500}
+    .hname{font-size:11px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+    .hcat{font-size:13px}
+    .htime{font-size:10px;color:#333;white-space:nowrap}
+  </style>
+</head>
+<body>
+
+<!-- Duplicate Alert -->
+<div class="dup-overlay" id="dupOverlay">
+  <div class="dup-card">
+    <div class="dup-emoji">⚠️</div>
+    <div class="dup-title">Already Distributed!</div>
+    <div class="dup-name" id="dupName"></div>
+    <div class="dup-sub"  id="dupSub"></div>
+    <div class="dup-item-chip" id="dupChip"></div>
+    <div class="dup-msg">
+      This item was <strong>already given</strong> to this student.<br>
+      Please <strong>DO NOT distribute again!</strong>
+    </div>
+    <button class="dup-close" onclick="closeDup()">✓ OK, Got It</button>
+  </div>
+</div>
+
+<!-- Green flash -->
+<div class="flash-ok" id="flashOk"></div>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        <path d="M14 14h3M17 14v3M14 17h3M17 17v3M20 14v3M20 17h-3"/>
+      </svg>
+      <h1>Distribution Scanner</h1>
+    </div>
+    <span class="year-badge">2026-27</span>
+  </div>
+  <p class="sub">Sairam Vidyalaya · CBSE</p>
+
+  <!-- Summary -->
+  <div class="sum-grid">
+    <div class="sc blue"><div class="v" id="sTotal">…</div><div class="l">Total</div></div>
+    <div class="sc green"><div class="v" id="sBooks">…</div><div class="l">Books Done</div></div>
+    <div class="sc amber"><div class="v" id="sUniform">…</div><div class="l">Uniform Done</div></div>
+  </div>
+
+  <!-- Category cards -->
+  <div class="cat-row">
+    <div class="cat-card books active" id="cat-books" onclick="selItem('books')">
+      <div class="ci">📚</div>
+      <div class="cv" id="cv-books">…/…</div>
+      <div class="cl">Books &amp; Notebooks</div>
+    </div>
+    <div class="cat-card uniform" id="cat-uniform" onclick="selItem('uniform')">
+      <div class="ci">👕</div>
+      <div class="cv" id="cv-uniform">…/…</div>
+      <div class="cl">Uniform</div>
+    </div>
+  </div>
+
+  <!-- Progress bars -->
+  <div class="prog-section">
+    <div class="prog-item">
+      <div class="prog-label"><span>📚 Books &amp; Notebooks</span><span id="pp-books">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill books" id="pf-books" style="width:0%"></div></div>
+    </div>
+    <div class="prog-item">
+      <div class="prog-label"><span>👕 Uniform</span><span id="pp-uniform">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill uniform" id="pf-uniform" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Item selector -->
+  <div class="item-sel-label">Currently Marking:</div>
+  <div class="item-sel">
+    <button class="ibtn books on" id="ibtn-books"   onclick="selItem('books')">
+      <span class="ie">📚</span>Books &amp; Notebooks
+    </button>
+    <button class="ibtn uniform"  id="ibtn-uniform" onclick="selItem('uniform')">
+      <span class="ie">👕</span>Uniform
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('camera')">📷 Camera</button>
+    <button class="tab"    onclick="switchTab('upload')">🖼️ Upload</button>
+  </div>
+
+  <!-- Camera -->
+  <div id="camPanel">
+    <div id="reader"></div>
+    <div class="cam-btns">
+      <button class="btn g" id="startBtn" onclick="startCam()">▶ Start Camera</button>
+      <button class="btn r" id="stopBtn"  onclick="stopCam()" style="display:none">■ Stop</button>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-panel" id="upPanel">
+    <div class="dropzone" onclick="document.getElementById('fileInput').click()">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <p>Tap to upload ID card photo</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" onchange="onFile(event)"/>
+    <div class="prev-box" id="prevBox">
+      <img id="prevImg" src="" alt=""/>
+      <button class="clr-btn" onclick="clearFile()">✕</button>
+    </div>
+    <button class="btn g sfbtn" id="sfBtn" onclick="scanFile()">Scan Barcode from Image</button>
+    <div id="fileReader"></div>
+  </div>
+
+  <!-- Manual -->
+  <div class="manual-row">
+    <input type="text" id="manInput" placeholder="Type Admission No. manually…"
+           onkeydown="if(event.key==='Enter')submitManual()"/>
+    <button onclick="submitManual()">Go</button>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="dot scanning" id="dot"></div>
+    <span class="stxt" id="stxt">Loading…</span>
+  </div>
+
+  <!-- Student card -->
+  <div class="student-card" id="studentCard">
+    <div class="sc-top">
+      <div>
+        <div class="sc-name" id="scName"></div>
+        <div class="sc-adm"  id="scAdm"></div>
+        <div class="sc-meta" id="scMeta"></div>
+        <span class="gender-badge" id="genderBadge"></span>
+      </div>
+    </div>
+    <div class="dist-grid">
+      <div class="dist-item pending" id="di-books">
+        <div class="di-icon">📚</div>
+        <div class="di-label">Books &amp; Notebooks</div>
+        <div class="di-status pending" id="ds-books">—</div>
+        <div class="di-date" id="dd-books"></div>
+      </div>
+      <div class="dist-item pending" id="di-uniform">
+        <div class="di-icon">👕</div>
+        <div class="di-label">Uniform</div>
+        <div class="di-status pending" id="ds-uniform">—</div>
+        <div class="di-date" id="dd-uniform"></div>
+      </div>
+    </div>
+    <div class="sc-actions">
+      <button onclick="resumeScan()">Scan Again</button>
+      <span class="countdown-txt" id="countdown"></span>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="hist" id="hist">
+    <div class="h-hdr">
+      <span>Recent Scans</span>
+      <button onclick="clearHist()">Clear</button>
+    </div>
+    <div id="hlist"></div>
+  </div>
+
+</div>
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+// IMPORTANT: After deploying new Code.gs, update this URL!
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-hsteXiHaeKnTxXd1_bh9kl2Xj0ki3L_2MH4uy9WXBuBLdzx5qWRSuu8yql4jPtos/exec';
+// ↑ Replace with NEW deployment URL after updating Code.gs
+
+// ── STATE ─────────────────────────────────────────────────────
+let scanner=null, scanning=false, paused=false, lastVal='';
+let fileScanner=null, selFile=null;
+let curTab='camera', curItem='books';
+let scanHistory=[], countdownTimer=null, audioCtx=null;
+
+// ── INIT ──────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  setStatus('Loading summary…','scanning');
+  loadSummary();
+  document.addEventListener('touchstart',initAudio,{once:true});
+  document.addEventListener('click',initAudio,{once:true});
+});
+
+function initAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+
+function beep(type){
+  if(!audioCtx) return;
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination);
+  if(type==='ok'){
+    o.frequency.setValueAtTime(880,audioCtx.currentTime);
+    o.frequency.setValueAtTime(1100,audioCtx.currentTime+0.1);
+    g.gain.setValueAtTime(0.25,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.3);
+    o.start(); o.stop(audioCtx.currentTime+0.3);
+  } else if(type==='dup'){
+    o.type='square';
+    o.frequency.setValueAtTime(280,audioCtx.currentTime);
+    o.frequency.setValueAtTime(180,audioCtx.currentTime+0.2);
+    g.gain.setValueAtTime(0.3,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.5);
+    o.start(); o.stop(audioCtx.currentTime+0.5);
+  } else if(type==='err'){
+    o.frequency.setValueAtTime(200,audioCtx.currentTime);
+    g.gain.setValueAtTime(0.3,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.35);
+    o.start(); o.stop(audioCtx.currentTime+0.35);
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function setStatus(t,type){
+  document.getElementById('stxt').textContent=t;
+  document.getElementById('dot').className='dot'+(type?' '+type:'');
+}
+function show(id,d='block'){document.getElementById(id).style.display=d;}
+function hide(id){document.getElementById(id).style.display='none';}
+function getLabel(item){return item==='books'?'Books & Notebooks':'Uniform';}
+
+function flashGreen(){
+  const el=document.getElementById('flashOk');
+  el.style.display='block';
+  el.style.animation='none';
+  el.style.opacity='1';
+  setTimeout(()=>{
+    el.style.transition='opacity 0.6s';
+    el.style.opacity='0';
+  },50);
+  setTimeout(()=>{el.style.display='none';el.style.transition='';},700);
+}
+
+// ── ITEM SELECTOR ─────────────────────────────────────────────
+function selItem(item){
+  curItem=item;
+  ['books','uniform'].forEach(k=>{
+    const btn=document.getElementById('ibtn-'+k);
+    const cat=document.getElementById('cat-'+k);
+    btn.className='ibtn '+k+(k===item?' on':'');
+    cat.className='cat-card '+k+(k===item?' active':'');
+  });
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function switchTab(t){
+  curTab=t;
+  document.querySelectorAll('.tab').forEach((b,i)=>
+    b.classList.toggle('on',(i===0&&t==='camera')||(i===1&&t==='upload')));
+  document.getElementById('camPanel').style.display=t==='camera'?'block':'none';
+  document.getElementById('upPanel').style.display=t==='upload'?'block':'none';
+  if(t==='upload') stopCam();
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function api(params){
+  try{
+    const r=await fetch(SCRIPT_URL+'?'+new URLSearchParams(params));
+    return await r.json();
+  }catch(e){return{success:false,message:'Network error: '+e.message};}
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────
+async function loadSummary(){
+  const d=await api({action:'summary'});
+  if(!d||!d.success){setStatus('Summary load failed — check URL','err');return;}
+  const tot=d.total;
+  document.getElementById('sTotal').textContent=tot;
+  d.summary.forEach(s=>{
+    const k=s.key;
+    const pct=tot>0?Math.round(s.issued/tot*100):0;
+    document.getElementById('s'+k.charAt(0).toUpperCase()+k.slice(1)).textContent=s.issued;
+    document.getElementById('cv-'+k).textContent=s.issued+'/'+tot;
+    document.getElementById('pf-'+k).style.width=pct+'%';
+    document.getElementById('pp-'+k).textContent=pct+'%';
+  });
+  setStatus('Ready — select item & scan','ok');
+}
+
+// ── PROCESS ───────────────────────────────────────────────────
+async function process(admNo){
+  admNo=admNo.trim().toUpperCase();
+  if(!admNo) return;
+  if(paused&&admNo===lastVal) return;
+  paused=true; lastVal=admNo;
+
+  setStatus('Looking up '+admNo+'…','scanning');
+  hide('studentCard');
+
+  const d=await api({action:'mark', admNo, item:curItem});
+
+  if(!d){setStatus('Network error','err'); paused=false; return;}
+
+  if(!d.success){
+    // Not found
+    setStatus('❌ Not found: '+admNo,'err');
+    beep('err');
+    if(navigator.vibrate) navigator.vibrate([200]);
+    showNotFound(admNo);
+    addHist(admNo,'','err');
+    startCountdown(3); setTimeout(resumeScan,3000);
+    return;
+  }
+
+  // Show student card
+  renderStudentCard(d);
+
+  const res=d.results||{};
+  const thisResult=res[curItem];
+
+  if(thisResult==='already'){
+    // DUPLICATE
+    setStatus('⚠️ Already distributed! — '+d.name,'warn');
+    showDupAlert(d);
+    addHist(admNo,d.name,'dup');
+  } else if(thisResult==='done'){
+    // SUCCESS
+    setStatus('✓ '+getLabel(curItem)+' distributed — '+d.name,'ok');
+    flashGreen();
+    beep('ok');
+    if(navigator.vibrate) navigator.vibrate([70]);
+    loadSummary();
+    addHist(admNo,d.name,'ok');
+    startCountdown(2); setTimeout(resumeScan,2500);
+  }
+}
+
+function renderStudentCard(d){
+  show('studentCard');
+  const card=document.getElementById('studentCard');
+  const res=d.results||{};
+  const isNew=Object.values(res).some(v=>v==='done');
+  const isDup=Object.values(res).every(v=>v==='already');
+  card.className='student-card '+(isNew?'new':isDup?'dup':'');
+
+  document.getElementById('scName').textContent=d.name||d.admNo;
+  document.getElementById('scAdm').textContent=d.admNo;
+  document.getElementById('scMeta').textContent='Class '+d.class+' – '+d.section;
+
+  const gb=document.getElementById('genderBadge');
+  const isFemale=(d.gender||'').toUpperCase()==='F';
+  gb.textContent=isFemale?'👧 Female':'👦 Male';
+  gb.className='gender-badge '+(isFemale?'f':'m');
+
+  // Status items
+  const statusMap={
+    books: {res:res.books, prev:d.prevStatus?.books},
+    uniform:{res:res.uniform,prev:d.prevStatus?.uniform}
+  };
+  for(const [key,val] of Object.entries(statusMap)){
+    const di=document.getElementById('di-'+key);
+    const ds=document.getElementById('ds-'+key);
+    const dd=document.getElementById('dd-'+key);
+    if(val.res==='done'){
+      di.className='dist-item done';
+      ds.className='di-status done'; ds.textContent='✓ Just Distributed';
+      dd.textContent='Now';
+    } else if(val.res==='already'||val.prev){
+      di.className='dist-item issued';
+      ds.className='di-status issued'; ds.textContent='✓ Distributed';
+      dd.textContent='';
+    } else {
+      di.className='dist-item pending';
+      ds.className='di-status pending'; ds.textContent='Not Yet';
+      dd.textContent='';
+    }
+  }
+}
+
+function showNotFound(admNo){
+  show('studentCard');
+  document.getElementById('studentCard').className='student-card notfound';
+  document.getElementById('scName').textContent='Not Found';
+  document.getElementById('scAdm').textContent=admNo;
+  document.getElementById('scMeta').textContent='Admission number not in sheet';
+  document.getElementById('genderBadge').textContent='';
+  document.getElementById('genderBadge').className='gender-badge';
+  ['books','uniform'].forEach(k=>{
+    document.getElementById('di-'+k).className='dist-item pending';
+    document.getElementById('ds-'+k).className='di-status pending';
+    document.getElementById('ds-'+k).textContent='—';
+    document.getElementById('dd-'+k).textContent='';
+  });
+}
+
+// ── DUPLICATE ALERT ───────────────────────────────────────────
+function showDupAlert(d){
+  document.getElementById('dupName').textContent=d.name||d.admNo;
+  document.getElementById('dupSub').textContent=d.admNo+' · Class '+d.class+' '+d.section;
+  document.getElementById('dupChip').textContent=(curItem==='books'?'📚':'👕')+' '+getLabel(curItem);
+  document.getElementById('dupOverlay').classList.add('show');
+  beep('dup');
+  if(navigator.vibrate) navigator.vibrate([150,80,150,80,200]);
+}
+function closeDup(){
+  document.getElementById('dupOverlay').classList.remove('show');
+  setTimeout(resumeScan,400);
+}
+
+// ── COUNTDOWN ─────────────────────────────────────────────────
+function startCountdown(sec){
+  clearInterval(countdownTimer);
+  let s=sec;
+  const el=document.getElementById('countdown');
+  if(el) el.textContent='Next scan in '+s+'s…';
+  countdownTimer=setInterval(()=>{
+    s--;
+    if(el) el.textContent=s>0?'Next scan in '+s+'s…':'';
+    if(s<=0) clearInterval(countdownTimer);
+  },1000);
+}
+
+function resumeScan(){
+  clearInterval(countdownTimer);
+  const el=document.getElementById('countdown');
+  if(el) el.textContent='';
+  paused=false; lastVal='';
+  hide('studentCard');
+  setStatus('Ready — hold barcode in box','scanning');
+}
+
+// ── HISTORY ───────────────────────────────────────────────────
+function addHist(admNo,name,type){
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  scanHistory.unshift({admNo,name,type,item:curItem,time:t});
+  if(scanHistory.length>30) scanHistory.pop();
+  show('hist');
+  document.getElementById('hlist').innerHTML=scanHistory.map(h=>`
+    <div class="hitem">
+      <div class="hdot ${h.type}"></div>
+      <div class="hadm">${h.admNo}</div>
+      <div class="hname">${h.name||''}</div>
+      <div class="hcat">${h.item==='books'?'📚':'👕'}</div>
+      <div class="htime">${h.time}</div>
+    </div>`).join('');
+}
+function clearHist(){
+  scanHistory=[]; hide('hist');
+  document.getElementById('hlist').innerHTML='';
+}
+
+// ── CAMERA ────────────────────────────────────────────────────
+function onScan(text){ if(paused||text===lastVal) return; process(text); }
+
+async function startCam(){
+  setStatus('Starting camera…','');
+  hide('startBtn'); show('stopBtn');
+  try{
+    scanner=new Html5Qrcode('reader',{verbose:false});
+    await scanner.start(
+      {facingMode:'environment'},
+      {fps:25,qrbox:{width:270,height:100},experimentalFeatures:{useBarCodeDetectorIfSupported:true}},
+      onScan,()=>{}
+    );
+    scanning=true; paused=false;
+    setStatus('Ready — hold barcode in box','scanning');
+  }catch(e){
+    try{
+      await scanner.start({facingMode:'user'},{fps:25,qrbox:{width:270,height:100}},onScan,()=>{});
+      scanning=true; paused=false;
+      setStatus('Scanning with webcam…','scanning');
+    }catch(e2){
+      setStatus('Camera error: '+e2,'err');
+      show('startBtn'); hide('stopBtn');
+    }
+  }
+}
+
+async function stopCam(){
+  if(scanner&&scanning){
+    try{await scanner.stop();scanner.clear();}catch(e){}
+    scanner=null; scanning=false;
+  }
+  show('startBtn'); hide('stopBtn');
+  setStatus('Scanner stopped','');
+}
+
+// ── MANUAL ────────────────────────────────────────────────────
+function submitManual(){
+  const v=document.getElementById('manInput').value.trim();
+  if(!v) return;
+  document.getElementById('manInput').value='';
+  process(v);
+}
+
+// ── UPLOAD ────────────────────────────────────────────────────
+function onFile(e){ const f=e.target.files[0]; if(f) loadPrev(f); }
+function loadPrev(file){
+  selFile=file;
+  const r=new FileReader();
+  r.onload=e=>{
+    document.getElementById('prevImg').src=e.target.result;
+    show('prevBox'); show('sfBtn');
+    setStatus('Image loaded — tap Scan Barcode','');
+  };
+  r.readAsDataURL(file);
+}
+function clearFile(){
+  selFile=null; hide('prevBox'); hide('sfBtn');
+  document.getElementById('fileInput').value='';
+}
+async function scanFile(){
+  if(!selFile) return;
+  setStatus('Scanning image…','scanning');
+  document.getElementById('sfBtn').disabled=true;
+  document.getElementById('sfBtn').textContent='Scanning…';
+  try{
+    if(fileScanner){try{fileScanner.clear();}catch(e){}}
+    fileScanner=new Html5Qrcode('fileReader',{verbose:false});
+    const result=await fileScanner.scanFile(selFile,true);
+    process(result);
+  }catch(e){
+    setStatus('No barcode found — try a clearer photo','err');
+  }
+  document.getElementById('sfBtn').disabled=false;
+  document.getElementById('sfBtn').textContent='Scan Barcode from Image';
+}
+</script>
+</body>
+</html>
