@@ -211,9 +211,47 @@
 
   <!-- Summary -->
   <div class="sum-grid">
-    <div class="sc blue"><div class="v" id="sTotal">…</div><div class="l">Total</div></div>
-    <div class="sc green"><div class="v" id="sBooks">…</div><div class="l">Books Done</div></div>
-    <div class="sc amber"><div class="v" id="sUniform">…</div><div class="l">Uniform Done</div></div>
+    <div class="sc blue"><div class="v" id="sTotal">…</div><div class="l">Total Students</div></div>
+    <div class="sc green"><div class="v" id="sPaid">…</div><div class="l">Fee Paid</div></div>
+    <div class="sc amber"><div class="v" id="sUnpaid">…</div><div class="l">Fee Pending</div></div>
+  </div>
+
+  <!-- Paid Summary Table -->
+  <div id="paidSummaryBox" style="margin-bottom:10px;background:#1e1e1e;border-radius:12px;border:1px solid #2a2a2a;overflow:hidden">
+    <div style="padding:8px 14px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Distribution vs Payment</span>
+      <button onclick="loadSummary()" style="font-size:10px;color:#444;background:none;border:none;cursor:pointer">↻ Refresh</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#1a1a1a">
+          <th style="padding:7px 12px;text-align:left;color:#555;font-weight:600;border-bottom:1px solid #2a2a2a">Category</th>
+          <th style="padding:7px 8px;text-align:center;color:#22c55e;font-weight:600;border-bottom:1px solid #2a2a2a">💰 Paid</th>
+          <th style="padding:7px 8px;text-align:center;color:#f59e0b;font-weight:600;border-bottom:1px solid #2a2a2a">⏳ Unpaid</th>
+          <th style="padding:7px 8px;text-align:center;color:#60a5fa;font-weight:600;border-bottom:1px solid #2a2a2a">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #222">
+          <td style="padding:8px 12px;color:#888">👥 Students</td>
+          <td style="padding:8px;text-align:center;color:#22c55e;font-weight:700" id="pt-students-paid">…</td>
+          <td style="padding:8px;text-align:center;color:#f59e0b;font-weight:700" id="pt-students-unpaid">…</td>
+          <td style="padding:8px;text-align:center;color:#60a5fa;font-weight:700" id="pt-students-total">…</td>
+        </tr>
+        <tr style="border-bottom:1px solid #222">
+          <td style="padding:8px 12px;color:#888">📚 Books</td>
+          <td style="padding:8px;text-align:center" id="pt-books-paid">…</td>
+          <td style="padding:8px;text-align:center" id="pt-books-unpaid">…</td>
+          <td style="padding:8px;text-align:center;color:#60a5fa;font-weight:700" id="pt-books-total">…</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;color:#888">👕 Uniform</td>
+          <td style="padding:8px;text-align:center" id="pt-unif-paid">…</td>
+          <td style="padding:8px;text-align:center" id="pt-unif-unpaid">…</td>
+          <td style="padding:8px;text-align:center;color:#60a5fa;font-weight:700" id="pt-unif-total">…</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- Category cards -->
@@ -308,6 +346,7 @@
         <div class="sc-adm"  id="scAdm"></div>
         <div class="sc-meta" id="scMeta"></div>
         <span class="gender-badge" id="genderBadge"></span>
+        <span id="paidBadge"></span>
       </div>
     </div>
     <div class="dist-grid">
@@ -343,7 +382,7 @@
 <script>
 // ── CONFIG ────────────────────────────────────────────────────
 // IMPORTANT: After deploying new Code.gs, update this URL!
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-hsteXiHaeKnTxXd1_bh9kl2Xj0ki3L_2MH4uy9WXBuBLdzx5qWRSuu8yql4jPtos/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0NEXN3YsyEzgZLycBZd90ABhJ8hELry6VRaCd471XyYndrmJeuh_1oOC_hPh2YsU/exec';
 // ↑ Replace with NEW deployment URL after updating Code.gs
 
 // ── STATE ─────────────────────────────────────────────────────
@@ -444,15 +483,54 @@ async function loadSummary(){
   const d=await api({action:'summary'});
   if(!d||!d.success){setStatus('Summary load failed — check URL','err');return;}
   const tot=d.total;
+  const paid=d.paid, unpaid=d.unpaid, overall=d.overall;
+
+  // Top summary
   document.getElementById('sTotal').textContent=tot;
-  d.summary.forEach(s=>{
-    const k=s.key;
-    const pct=tot>0?Math.round(s.issued/tot*100):0;
-    document.getElementById('s'+k.charAt(0).toUpperCase()+k.slice(1)).textContent=s.issued;
-    document.getElementById('cv-'+k).textContent=s.issued+'/'+tot;
-    document.getElementById('pf-'+k).style.width=pct+'%';
-    document.getElementById('pp-'+k).textContent=pct+'%';
-  });
+  document.getElementById('sPaid').textContent=paid.count;
+  document.getElementById('sUnpaid').textContent=unpaid.count;
+
+  // Category cards + progress bars
+  const booksIssued=overall.books.issued, unifIssued=overall.uniform.issued;
+  document.getElementById('sBooks') && (document.getElementById('sBooks').textContent=booksIssued);
+  document.getElementById('sUniform') && (document.getElementById('sUniform').textContent=unifIssued);
+  document.getElementById('cv-books').textContent=booksIssued+'/'+tot;
+  document.getElementById('cv-uniform').textContent=unifIssued+'/'+tot;
+  const bPct=tot>0?Math.round(booksIssued/tot*100):0;
+  const uPct=tot>0?Math.round(unifIssued/tot*100):0;
+  document.getElementById('pf-books').style.width=bPct+'%';
+  document.getElementById('pp-books').textContent=bPct+'%';
+  document.getElementById('pf-uniform').style.width=uPct+'%';
+  document.getElementById('pp-uniform').textContent=uPct+'%';
+
+  // Paid summary table
+  const pC=paid.count, uC=unpaid.count;
+
+  // Students row
+  document.getElementById('pt-students-paid').textContent=pC;
+  document.getElementById('pt-students-unpaid').textContent=uC;
+  document.getElementById('pt-students-total').textContent=tot;
+
+  // Books row
+  const pBd=paid.books.distributed, pBp=paid.books.pending;
+  const uBd=unpaid.books.distributed;
+  document.getElementById('pt-books-paid').innerHTML=
+    '<span style="color:#22c55e;font-weight:700">'+pBd+'</span><span style="color:#555;font-size:10px"> dist</span><br>'+
+    '<span style="color:#f59e0b;font-weight:700">'+pBp+'</span><span style="color:#555;font-size:10px"> pend</span>';
+  document.getElementById('pt-books-unpaid').innerHTML=
+    '<span style="color:#ef4444;font-weight:700">'+uBd+'</span><span style="color:#555;font-size:10px"> dist</span>';
+  document.getElementById('pt-books-total').textContent=booksIssued+'/'+tot;
+
+  // Uniform row
+  const pUd=paid.uniform.distributed, pUp=paid.uniform.pending;
+  const uUd=unpaid.uniform.distributed;
+  document.getElementById('pt-unif-paid').innerHTML=
+    '<span style="color:#22c55e;font-weight:700">'+pUd+'</span><span style="color:#555;font-size:10px"> dist</span><br>'+
+    '<span style="color:#f59e0b;font-weight:700">'+pUp+'</span><span style="color:#555;font-size:10px"> pend</span>';
+  document.getElementById('pt-unif-unpaid').innerHTML=
+    '<span style="color:#ef4444;font-weight:700">'+uUd+'</span><span style="color:#555;font-size:10px"> dist</span>';
+  document.getElementById('pt-unif-total').textContent=unifIssued+'/'+tot;
+
   setStatus('Ready — select item & scan','ok');
 }
 
@@ -520,6 +598,15 @@ function renderStudentCard(d){
   const isFemale=(d.gender||'').toUpperCase()==='F';
   gb.textContent=isFemale?'👧 Female':'👦 Male';
   gb.className='gender-badge '+(isFemale?'f':'m');
+
+  // Paid badge
+  const pb=document.getElementById('paidBadge');
+  if(pb){
+    pb.textContent=d.isPaid?'💰 Fee Paid':'⚠️ Fee Pending';
+    pb.style.cssText=d.isPaid
+      ?'font-size:11px;padding:3px 10px;border-radius:20px;background:#0f2a0f;color:#22c55e;border:1px solid #166534;font-weight:600;margin-top:4px;display:inline-block'
+      :'font-size:11px;padding:3px 10px;border-radius:20px;background:#2a1500;color:#f59e0b;border:1px solid #854d0e;font-weight:600;margin-top:4px;display:inline-block';
+  }
 
   // Status items
   const statusMap={
