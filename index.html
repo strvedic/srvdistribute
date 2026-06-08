@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>Distribution Scanner – Sairam Vidyalaya</title>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f0f;min-height:100vh;display:flex;justify-content:center}
@@ -45,6 +47,15 @@
     .prog-fill{height:100%;border-radius:10px;transition:width 0.7s ease}
     .prog-fill.books{background:linear-gradient(90deg,#3b82f6,#93c5fd)}
     .prog-fill.uniform{background:linear-gradient(90deg,#16a34a,#4ade80)}
+
+    /* Uniform status mini-bar */
+    .unif-status-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+    .ust{background:#1e1e1e;border-radius:8px;padding:7px 6px;text-align:center;border:1px solid #2a2a2a}
+    .ust .uv{font-size:16px;font-weight:700}
+    .ust .ul{font-size:9px;color:#555;margin-top:1px}
+    .ust.recv .uv{color:#60a5fa}
+    .ust.pend .uv{color:#f59e0b}
+    .ust.blank .uv{color:#3a3a3a}
 
     /* Item selector */
     .item-sel-label{font-size:10px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
@@ -134,9 +145,50 @@
     .di-status.pending{color:#333}
     .di-date{font-size:9px;color:#444;margin-top:2px}
 
+    /* Uniform status chip on student card */
+    .unif-chip-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .unif-chip-label{font-size:10px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    .unif-chip{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:700;cursor:default}
+    .unif-chip.received{background:#0f1f2f;color:#60a5fa;border:1px solid #1a3a5a}
+    .unif-chip.pending-status{background:#2a1800;color:#f59e0b;border:1px solid #5a3000}
+    .unif-chip.blank{background:#1e1e1e;color:#3a3a3a;border:1px solid #2a2a2a}
+
+    /* Uniform status setter buttons on card */
+    .us-btns{display:flex;gap:6px;margin-bottom:12px}
+    .us-btn{flex:1;padding:8px 6px;border-radius:8px;border:1px solid #2a2a2a;background:#1e1e1e;color:#555;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center}
+    .us-btn.active-recv{background:#0f1f2f;border-color:#1a4a7a;color:#60a5fa}
+    .us-btn.active-pend{background:#2a1800;border-color:#7a3a00;color:#f59e0b}
+    .us-btn:hover{opacity:0.8}
+
     .sc-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .sc-actions button{padding:9px 18px;border-radius:8px;border:none;background:#15803d;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
     .countdown-txt{font-size:12px;color:#444}
+
+    /* Summary table */
+    #paidSummaryBox{margin-bottom:10px;background:#1e1e1e;border-radius:12px;border:1px solid #2a2a2a;overflow:hidden}
+
+    /* ── REPORTS SECTION ─────────────────────────────────────── */
+    .reports-section{margin-top:16px}
+    .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .sec-hdr span{font-size:11px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    .rep-cards{display:flex;flex-direction:column;gap:8px}
+    .rep-card{background:#1e1e1e;border-radius:12px;border:1px solid #2a2a2a;padding:12px 14px;display:flex;align-items:center;gap:12px}
+    .rep-icon{font-size:28px;flex-shrink:0}
+    .rep-info{flex:1;min-width:0}
+    .rep-title{font-size:13px;font-weight:700;color:#ccc;margin-bottom:2px}
+    .rep-desc{font-size:10px;color:#444;line-height:1.4}
+    .rep-count{font-size:18px;font-weight:800;margin-bottom:2px}
+    .rep-count.red{color:#ef4444}
+    .rep-count.amber{color:#f59e0b}
+    .rep-count.blue{color:#60a5fa}
+    .rep-dl{padding:8px 14px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.15s}
+    .rep-dl:disabled{opacity:0.5;cursor:not-allowed}
+    .rep-dl.dl-red{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b}
+    .rep-dl.dl-amber{background:#422006;color:#fcd34d;border:1px solid #78350f}
+    .rep-dl.dl-blue{background:#1e3a5f;color:#93c5fd;border:1px solid #1d4ed8}
+    .rep-dl:hover:not(:disabled){filter:brightness(1.2)}
+    .load-rep-btn{width:100%;padding:11px;border-radius:10px;border:1px solid #2a2a2a;background:#222;color:#888;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all 0.15s}
+    .load-rep-btn:hover{background:#2a2a2a;color:#ccc}
 
     /* Duplicate overlay */
     .dup-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.9);align-items:center;justify-content:center;animation:fadeIn .2s}
@@ -155,7 +207,6 @@
 
     /* Flash overlay */
     .flash-ok{display:none;position:fixed;inset:0;z-index:998;background:rgba(34,197,94,.1);pointer-events:none}
-    @keyframes flashOut{0%{opacity:1}100%{opacity:0;display:none}}
 
     /* History */
     .hist{display:none;margin-top:12px}
@@ -171,6 +222,9 @@
     .hname{font-size:11px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
     .hcat{font-size:13px}
     .htime{font-size:10px;color:#333;white-space:nowrap}
+
+    /* Divider */
+    .divider{height:1px;background:#222;margin:16px 0}
   </style>
 </head>
 <body>
@@ -217,7 +271,7 @@
   </div>
 
   <!-- Paid Summary Table -->
-  <div id="paidSummaryBox" style="margin-bottom:10px;background:#1e1e1e;border-radius:12px;border:1px solid #2a2a2a;overflow:hidden">
+  <div id="paidSummaryBox">
     <div style="padding:8px 14px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between;align-items:center">
       <span style="font-size:11px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Distribution vs Payment</span>
       <button onclick="loadSummary()" style="font-size:10px;color:#444;background:none;border:none;cursor:pointer">↻ Refresh</button>
@@ -252,6 +306,16 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Uniform Status Mini Summary -->
+  <div style="padding:8px 14px 6px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;margin-top:8px;border-radius:10px 10px 0 0;border:1px solid #2a2a2a">
+    <span style="font-size:11px;color:#444;font-weight:700;text-transform:uppercase;letter-spacing:.06em">👕 Uniform Delivery Status (Col K)</span>
+  </div>
+  <div class="unif-status-row" style="background:#1e1e1e;border-radius:0 0 10px 10px;border:1px solid #2a2a2a;border-top:none;padding:8px;margin-bottom:12px">
+    <div class="ust recv"><div class="uv" id="us-recv">…</div><div class="ul">Received</div></div>
+    <div class="ust pend"><div class="uv" id="us-pend">…</div><div class="ul">Pending</div></div>
+    <div class="ust blank"><div class="uv" id="us-blank">…</div><div class="ul">Not Set</div></div>
   </div>
 
   <!-- Category cards -->
@@ -358,11 +422,30 @@
       </div>
       <div class="dist-item pending" id="di-uniform">
         <div class="di-icon">👕</div>
-        <div class="di-label">Uniform</div>
+        <div class="di-label">Uniform Distributed</div>
         <div class="di-status pending" id="ds-uniform">—</div>
         <div class="di-date" id="dd-uniform"></div>
       </div>
     </div>
+
+    <!-- Uniform Status (Col K) — staff sets this -->
+    <div class="unif-chip-row">
+      <span class="unif-chip-label">Uniform Status:</span>
+      <span class="unif-chip blank" id="unifChip">Not Set</span>
+    </div>
+    <div style="font-size:10px;color:#3a3a3a;margin-bottom:6px;margin-top:-6px">Staff can set whether uniform is received from supplier:</div>
+    <div class="us-btns">
+      <button class="us-btn" id="us-recv-btn" onclick="setUnifStatus('Received')">
+        📦 Mark Received
+      </button>
+      <button class="us-btn" id="us-pend-btn" onclick="setUnifStatus('Pending')">
+        ⏳ Mark Pending
+      </button>
+      <button class="us-btn" id="us-clear-btn" onclick="setUnifStatus('')">
+        ✕ Clear
+      </button>
+    </div>
+
     <div class="sc-actions">
       <button onclick="resumeScan()">Scan Again</button>
       <span class="countdown-txt" id="countdown"></span>
@@ -378,18 +461,74 @@
     <div id="hlist"></div>
   </div>
 
-</div>
+  <!-- ── REPORTS SECTION ──────────────────────────────────── -->
+  <div class="divider"></div>
+  <div class="reports-section">
+    <div class="sec-hdr">
+      <span>📊 Reports & Downloads</span>
+    </div>
+
+    <button class="load-rep-btn" id="loadRepBtn" onclick="loadReports()">
+      🔄 Load Report Data
+    </button>
+
+    <div class="rep-cards">
+
+      <!-- Report 1: Pending Uniform -->
+      <div class="rep-card">
+        <div class="rep-icon">📋</div>
+        <div class="rep-info">
+          <div class="rep-title">Pending Uniform List</div>
+          <div class="rep-count red" id="rep1-count">—</div>
+          <div class="rep-desc">Students whose uniform has NOT been distributed yet (scanner not marked)</div>
+        </div>
+        <button class="rep-dl dl-red" id="rep1-btn" onclick="downloadReport('pendingUniform','Pending_Uniform_List')" disabled>
+          ⬇ Excel
+        </button>
+      </div>
+
+      <!-- Report 2: Received but Not Distributed -->
+      <div class="rep-card">
+        <div class="rep-icon">⚠️</div>
+        <div class="rep-info">
+          <div class="rep-title">Received ≠ Distributed</div>
+          <div class="rep-count amber" id="rep2-count">—</div>
+          <div class="rep-desc">Staff marked "Received" in col K but scanner hasn't marked distributed</div>
+        </div>
+        <button class="rep-dl dl-amber" id="rep2-btn" onclick="downloadReport('receivedNotDistributed','Received_Not_Distributed')" disabled>
+          ⬇ Excel
+        </button>
+      </div>
+
+      <!-- Report 3: Paid but Uniform Pending -->
+      <div class="rep-card">
+        <div class="rep-icon">💰</div>
+        <div class="rep-info">
+          <div class="rep-title">Paid but Uniform Pending</div>
+          <div class="rep-count blue" id="rep3-count">—</div>
+          <div class="rep-desc">Fee paid students who haven't received uniform distribution yet</div>
+        </div>
+        <button class="rep-dl dl-blue" id="rep3-btn" onclick="downloadReport('paidButUniformPending','Paid_Uniform_Pending')" disabled>
+          ⬇ Excel
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end .wrap -->
+
 <script>
 // ── CONFIG ────────────────────────────────────────────────────
-// IMPORTANT: After deploying new Code.gs, update this URL!
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0NEXN3YsyEzgZLycBZd90ABhJ8hELry6VRaCd471XyYndrmJeuh_1oOC_hPh2YsU/exec';
-// ↑ Replace with NEW deployment URL after updating Code.gs
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycQrI28KiPuSpR7TPFaK-faaSEydClf4JKPIwykz1JFxTyWD39VWuJn4qDs3uXLrT_/exec';
 
 // ── STATE ─────────────────────────────────────────────────────
 let scanner=null, scanning=false, paused=false, lastVal='';
 let fileScanner=null, selFile=null;
 let curTab='camera', curItem='books';
 let scanHistory=[], countdownTimer=null, audioCtx=null;
+let curAdmNo=''; // track current student on card for setUnifStatus
+let reportData=null;
 
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load',()=>{
@@ -440,8 +579,7 @@ function getLabel(item){return item==='books'?'Books & Notebooks':'Uniform';}
 function flashGreen(){
   const el=document.getElementById('flashOk');
   el.style.display='block';
-  el.style.animation='none';
-  el.style.opacity='1';
+  el.style.transition=''; el.style.opacity='1';
   setTimeout(()=>{
     el.style.transition='opacity 0.6s';
     el.style.opacity='0';
@@ -484,16 +622,13 @@ async function loadSummary(){
   if(!d||!d.success){setStatus('Summary load failed — check URL','err');return;}
   const tot=d.total;
   const paid=d.paid, unpaid=d.unpaid, overall=d.overall;
+  const us=d.unifStatus||{};
 
-  // Top summary
   document.getElementById('sTotal').textContent=tot;
   document.getElementById('sPaid').textContent=paid.count;
   document.getElementById('sUnpaid').textContent=unpaid.count;
 
-  // Category cards + progress bars
   const booksIssued=overall.books.issued, unifIssued=overall.uniform.issued;
-  document.getElementById('sBooks') && (document.getElementById('sBooks').textContent=booksIssued);
-  document.getElementById('sUniform') && (document.getElementById('sUniform').textContent=unifIssued);
   document.getElementById('cv-books').textContent=booksIssued+'/'+tot;
   document.getElementById('cv-uniform').textContent=unifIssued+'/'+tot;
   const bPct=tot>0?Math.round(booksIssued/tot*100):0;
@@ -503,15 +638,17 @@ async function loadSummary(){
   document.getElementById('pf-uniform').style.width=uPct+'%';
   document.getElementById('pp-uniform').textContent=uPct+'%';
 
+  // Uniform status mini-bar
+  document.getElementById('us-recv').textContent=us.received||0;
+  document.getElementById('us-pend').textContent=us.pending||0;
+  document.getElementById('us-blank').textContent=us.blank||0;
+
   // Paid summary table
   const pC=paid.count, uC=unpaid.count;
-
-  // Students row
   document.getElementById('pt-students-paid').textContent=pC;
   document.getElementById('pt-students-unpaid').textContent=uC;
   document.getElementById('pt-students-total').textContent=tot;
 
-  // Books row
   const pBd=paid.books.distributed, pBp=paid.books.pending;
   const uBd=unpaid.books.distributed;
   document.getElementById('pt-books-paid').innerHTML=
@@ -521,7 +658,6 @@ async function loadSummary(){
     '<span style="color:#ef4444;font-weight:700">'+uBd+'</span><span style="color:#555;font-size:10px"> dist</span>';
   document.getElementById('pt-books-total').textContent=booksIssued+'/'+tot;
 
-  // Uniform row
   const pUd=paid.uniform.distributed, pUp=paid.uniform.pending;
   const uUd=unpaid.uniform.distributed;
   document.getElementById('pt-unif-paid').innerHTML=
@@ -540,6 +676,7 @@ async function process(admNo){
   if(!admNo) return;
   if(paused&&admNo===lastVal) return;
   paused=true; lastVal=admNo;
+  curAdmNo=admNo;
 
   setStatus('Looking up '+admNo+'…','scanning');
   hide('studentCard');
@@ -549,7 +686,6 @@ async function process(admNo){
   if(!d){setStatus('Network error','err'); paused=false; return;}
 
   if(!d.success){
-    // Not found
     setStatus('❌ Not found: '+admNo,'err');
     beep('err');
     if(navigator.vibrate) navigator.vibrate([200]);
@@ -559,19 +695,16 @@ async function process(admNo){
     return;
   }
 
-  // Show student card
   renderStudentCard(d);
 
   const res=d.results||{};
   const thisResult=res[curItem];
 
   if(thisResult==='already'){
-    // DUPLICATE
     setStatus('⚠️ Already distributed! — '+d.name,'warn');
     showDupAlert(d);
     addHist(admNo,d.name,'dup');
   } else if(thisResult==='done'){
-    // SUCCESS
     setStatus('✓ '+getLabel(curItem)+' distributed — '+d.name,'ok');
     flashGreen();
     beep('ok');
@@ -599,13 +732,12 @@ function renderStudentCard(d){
   gb.textContent=isFemale?'👧 Female':'👦 Male';
   gb.className='gender-badge '+(isFemale?'f':'m');
 
-  // Paid badge
   const pb=document.getElementById('paidBadge');
   if(pb){
     pb.textContent=d.isPaid?'💰 Fee Paid':'⚠️ Fee Pending';
     pb.style.cssText=d.isPaid
-      ?'font-size:11px;padding:3px 10px;border-radius:20px;background:#0f2a0f;color:#22c55e;border:1px solid #166534;font-weight:600;margin-top:4px;display:inline-block'
-      :'font-size:11px;padding:3px 10px;border-radius:20px;background:#2a1500;color:#f59e0b;border:1px solid #854d0e;font-weight:600;margin-top:4px;display:inline-block';
+      ?'font-size:11px;padding:3px 10px;border-radius:20px;background:#0f2a0f;color:#22c55e;border:1px solid #166534;font-weight:600;margin-top:4px;display:inline-block;margin-left:4px'
+      :'font-size:11px;padding:3px 10px;border-radius:20px;background:#2a1500;color:#f59e0b;border:1px solid #854d0e;font-weight:600;margin-top:4px;display:inline-block;margin-left:4px';
   }
 
   // Status items
@@ -631,10 +763,58 @@ function renderStudentCard(d){
       dd.textContent='';
     }
   }
+
+  // Uniform Status chip (col K)
+  renderUnifChip(d.unifStatus||'');
+}
+
+function renderUnifChip(status){
+  const chip=document.getElementById('unifChip');
+  const recvBtn=document.getElementById('us-recv-btn');
+  const pendBtn=document.getElementById('us-pend-btn');
+  if(status==='Received'){
+    chip.textContent='📦 Received'; chip.className='unif-chip received';
+    recvBtn.className='us-btn active-recv';
+    pendBtn.className='us-btn';
+  } else if(status==='Pending'){
+    chip.textContent='⏳ Pending'; chip.className='unif-chip pending-status';
+    recvBtn.className='us-btn';
+    pendBtn.className='us-btn active-pend';
+  } else {
+    chip.textContent='— Not Set'; chip.className='unif-chip blank';
+    recvBtn.className='us-btn';
+    pendBtn.className='us-btn';
+  }
+}
+
+// ── SET UNIFORM STATUS ────────────────────────────────────────
+async function setUnifStatus(status){
+  if(!curAdmNo){setStatus('No student scanned yet','err');return;}
+  const btn=status==='Received'
+    ?document.getElementById('us-recv-btn')
+    :status==='Pending'
+    ?document.getElementById('us-pend-btn')
+    :document.getElementById('us-clear-btn');
+  btn.textContent=status?'Saving…':'Clearing…';
+  btn.disabled=true;
+
+  const d=await api({action:'setUniformStatus', admNo:curAdmNo, status});
+  btn.disabled=false;
+  btn.textContent=status==='Received'?'📦 Mark Received':status==='Pending'?'⏳ Mark Pending':'✕ Clear';
+
+  if(d&&d.success){
+    renderUnifChip(status);
+    setStatus('Uniform status → '+(status||'Cleared')+' for '+d.name,'ok');
+    // refresh summary counts
+    loadSummary();
+  } else {
+    setStatus('Failed to set status: '+(d&&d.message)||'error','err');
+  }
 }
 
 function showNotFound(admNo){
   show('studentCard');
+  curAdmNo='';
   document.getElementById('studentCard').className='student-card notfound';
   document.getElementById('scName').textContent='Not Found';
   document.getElementById('scAdm').textContent=admNo;
@@ -647,6 +827,7 @@ function showNotFound(admNo){
     document.getElementById('ds-'+k).textContent='—';
     document.getElementById('dd-'+k).textContent='';
   });
+  renderUnifChip('');
 }
 
 // ── DUPLICATE ALERT ───────────────────────────────────────────
@@ -781,6 +962,79 @@ async function scanFile(){
   }
   document.getElementById('sfBtn').disabled=false;
   document.getElementById('sfBtn').textContent='Scan Barcode from Image';
+}
+
+// ── REPORTS ───────────────────────────────────────────────────
+async function loadReports(){
+  const btn=document.getElementById('loadRepBtn');
+  btn.textContent='⏳ Loading…';
+  btn.disabled=true;
+
+  const d=await api({action:'reports'});
+
+  btn.textContent='🔄 Refresh Reports';
+  btn.disabled=false;
+
+  if(!d||!d.success){
+    setStatus('Report load failed','err'); return;
+  }
+  reportData=d;
+
+  // Update counts + enable buttons
+  document.getElementById('rep1-count').textContent=d.pendingUniform.count+' students';
+  document.getElementById('rep2-count').textContent=d.receivedNotDistributed.count+' students';
+  document.getElementById('rep3-count').textContent=d.paidButUniformPending.count+' students';
+
+  ['rep1-btn','rep2-btn','rep3-btn'].forEach(id=>{
+    document.getElementById(id).disabled=false;
+  });
+  setStatus('Reports loaded — tap ⬇ Excel to download','ok');
+}
+
+function downloadReport(key, filename){
+  if(!reportData||!reportData[key]) return;
+  const rows=reportData[key].rows;
+  if(!rows||rows.length===0){
+    alert('No data to download for this report!'); return;
+  }
+
+  // Build worksheet data
+  const header=['Sl.No','Adm.No','Name','Class','Section','Gender','Fee Paid','Uniform Distributed','Uniform Status'];
+  const wsData=[header];
+  rows.forEach((r,i)=>{
+    wsData.push([
+      i+1,
+      r.admNo, r.name, r.class, r.section, r.gender,
+      r.isPaid, r.uniformDistributed, r.uniformStatus
+    ]);
+  });
+
+  // Create workbook with SheetJS
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths
+  ws['!cols']=[
+    {wch:6},{wch:14},{wch:28},{wch:8},{wch:8},{wch:8},
+    {wch:10},{wch:18},{wch:14}
+  ];
+
+  // Add metadata sheet
+  const today=new Date().toLocaleDateString('en-IN');
+  const metaData=[
+    ['Report','Sairam Vidyalaya – '+filename.replace(/_/g,' ')],
+    ['Generated On', today],
+    ['Total Students', rows.length],
+    ['School', 'Sairam Vidyalaya, Madipakkam'],
+    ['Academic Year','2026-27']
+  ];
+  const wsMeta=XLSX.utils.aoa_to_sheet(metaData);
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.utils.book_append_sheet(wb, wsMeta, 'Info');
+
+  const dateStr=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, filename+'_'+dateStr+'.xlsx');
 }
 </script>
 </body>
